@@ -22,7 +22,7 @@ export default function MyIncidents() {
         return;
       }
       try {
-        const res = await axios.get('http://localhost:5000/api/incidents/my-incidents', {
+        const res = await axios.get('https://vigilant-74go.onrender.com/api/incidents/my-incidents', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setIncidents(res.data.incidents || []);

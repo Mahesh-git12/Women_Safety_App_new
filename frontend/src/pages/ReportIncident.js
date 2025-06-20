@@ -61,7 +61,7 @@ export default function ReportIncident() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://localhost:5000/api/incidents/report',
+        `${process.env.REACT_APP_API_URL}/api/incidents/report`,
         data,
         { headers: { Authorization: `Bearer ${token}` } }
       );

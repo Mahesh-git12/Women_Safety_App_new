@@ -16,7 +16,10 @@ export default function Login() {
     e.preventDefault();
     setMessage('');
     try {
-      const res = await axios.post('http://localhost:5000/api/users/login', form);
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/users/login`,
+        form
+      );
       setMessage('Login successful!');
       localStorage.setItem('token', res.data.token);
       window.location.href = '/report';

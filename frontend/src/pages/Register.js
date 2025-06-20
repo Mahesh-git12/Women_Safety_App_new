@@ -19,10 +19,13 @@ export default function Register() {
     setMessage('');
     try {
       const contactsArray = form.emergencyContacts.split(',').map((c) => c.trim());
-      const res = await axios.post('http://localhost:5000/api/users/register', {
-        ...form,
-        emergencyContacts: contactsArray,
-      });
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/users/register`,
+        {
+          ...form,
+          emergencyContacts: contactsArray,
+        }
+      );
       setMessage(res.data.message || 'Registered successfully!');
       setForm({ name: '', email: '', password: '', emergencyContacts: '' });
     } catch (err) {
