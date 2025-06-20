@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Box, TextField, Button, Alert, Typography, Paper } from '@mui/material';
 
-// Geocode function using OpenStreetMap Nominatim API
 const geocodeLocation = async (locationName) => {
   const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationName)}`);
   const data = await res.json();
@@ -33,7 +32,6 @@ export default function ReportIncident() {
           await sendReport({ ...form, latitude, longitude });
         },
         async () => {
-          // If denied, try geocoding the location name
           const coords = await geocodeLocation(form.location);
           if (coords) {
             setMessage('Location access denied. Using geocoded coordinates.');
@@ -45,7 +43,6 @@ export default function ReportIncident() {
         }
       );
     } else {
-      // If geolocation not supported, try geocoding
       const coords = await geocodeLocation(form.location);
       if (coords) {
         setMessage('Geolocation not supported. Using geocoded coordinates.');

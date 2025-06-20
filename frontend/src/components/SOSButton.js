@@ -9,7 +9,6 @@ export default function SOSButton() {
 
   const handleSOS = async () => {
     setFeedback('');
-    // Try to get location (optional, can skip if not needed)
     let location = 'Unknown';
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -35,7 +34,6 @@ export default function SOSButton() {
       );
       setFeedback('SOS sent! Your contacts have been notified.');
       setOpen(true);
-      // Optionally: play a sound here
     } catch (err) {
       setFeedback('Failed to send SOS. Try again.');
       setOpen(true);
