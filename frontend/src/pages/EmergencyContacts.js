@@ -14,9 +14,10 @@ export default function EmergencyContacts() {
       const token = localStorage.getItem('token');
       if (!token) return;
       try {
-        const res = await axios.get('http://localhost:5000/api/users/emergency-contacts', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/users/emergency-contacts`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setContacts(res.data.emergencyContacts.join(', '));
       } catch (err) {
         setMessage('Failed to fetch contacts.');
@@ -30,9 +31,9 @@ export default function EmergencyContacts() {
     setMessage('');
     const token = localStorage.getItem('token');
     try {
-      const contactsArray = contacts.split(',').map((c) => c.trim());
+      const contactsArray = contacts.split(',').map((c) => c.trim()).filter(Boolean);
       const res = await axios.put(
-        'http://localhost:5000/api/users/emergency-contacts',
+        `${process.env.REACT_APP_API_URL}/api/users/emergency-contacts`,
         { emergencyContacts: contactsArray },
         { headers: { Authorization: `Bearer ${token}` } }
       );
