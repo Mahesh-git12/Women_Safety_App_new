@@ -69,7 +69,8 @@ Track live location: ${trackUrl}
     );
     await Promise.all(emailPromises);
 
-    res.json({ message: 'SOS received and selected contacts notified!' });
+    res.json({ message: 'SOS received and selected contacts notified!', incidentId: incident._id });
+
   } catch (err) {
     console.error('SOS email error:', err);
     res.status(500).json({ message: 'Failed to process SOS.' });
@@ -100,6 +101,35 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     res.json({ message: 'Incident deleted.' });
   } catch (err) {
     res.status(500).json({ message: 'Failed to delete incident.' });
+  }
+});
+
+// Update location for an incident (called by the user device)
+router.post('/update-location/:id', authMiddleware, async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+    const incident = await Incident.findOneAndUpdate(
+      { _id: req.params.id, user: req.user.userId },
+      { latestLocation: { latitude, longitude, updatedAt: new Date() } },
+      { new: true }
+    );
+    if (!incident) return res.status(404).json({ message: 'Incident not found.' });
+    res.json({ message: 'Location updated.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update location.' });
+  }
+});
+
+// Public endpoint to get latest location for tracking
+router.get('/track-location/:id', async (req, res) => {
+  try {
+    const incident = await Incident.findById(req.params.id);
+    if (!incident || !incident.latestLocation) {
+      return res.status(404).json({ message: 'No location found.' });
+    }
+    res.json({ latestLocation: incident.latestLocation });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch location.' });
   }
 });
 

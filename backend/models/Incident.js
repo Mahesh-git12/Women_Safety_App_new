@@ -1,13 +1,19 @@
 const mongoose = require('mongoose');
 
 const incidentSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   location: String,
   description: String,
+  latitude: Number,
+  longitude: Number,
   date: { type: Date, default: Date.now },
-  type: { type: String, default: 'incident' }, // 'incident' or 'sos'
-  latitude: Number,    // <-- add this
-  longitude: Number    // <-- add this
+  type: { type: String, enum: ['incident', 'sos'], default: 'incident' },
+  latestLocation: {
+    latitude: Number,
+    longitude: Number,
+    updatedAt: Date
+  }
+  // ...any other fields
 });
 
 module.exports = mongoose.model('Incident', incidentSchema);

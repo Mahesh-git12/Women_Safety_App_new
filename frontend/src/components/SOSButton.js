@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Fab, Tooltip, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button, Checkbox, FormControlLabel, FormGroup } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import axios from 'axios';
@@ -11,6 +11,8 @@ export default function SOSButton() {
   const [contacts, setContacts] = useState([]);
   const [selected, setSelected] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const watchIdRef = useRef(null);
+  const incidentIdRef = useRef(null);
 
   useEffect(() => {
     // Fetch emergency contacts when the button is rendered
@@ -30,6 +32,9 @@ export default function SOSButton() {
       }
     };
     fetchContacts();
+    // Cleanup on unmount
+    return () => stopLocationTracking();
+    // eslint-disable-next-line
   }, []);
 
   const handleSOSClick = () => {
@@ -42,6 +47,35 @@ export default function SOSButton() {
     );
   };
 
+  // Start tracking location after SOS is sent
+  const startLocationTracking = (incidentId, token) => {
+    if ('geolocation' in navigator) {
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        async (pos) => {
+          try {
+            await axios.post(
+              `${API_URL}/api/incidents/update-location/${incidentId}`,
+              { latitude: pos.coords.latitude, longitude: pos.coords.longitude },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          } catch (err) {
+            // Optionally handle location update error
+          }
+        },
+        (err) => { /* Optionally handle geolocation error */ },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+      );
+    }
+  };
+
+  // Stop tracking (optional, e.g. on SOS resolution)
+  const stopLocationTracking = () => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+  };
+
   const handleSendSOS = async () => {
     setDialogOpen(false);
     setFeedback('');
@@ -50,7 +84,7 @@ export default function SOSButton() {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           location = `Lat: ${pos.coords.latitude}, Lon: ${pos.coords.longitude}`;
-          sendSOS(location);
+          sendSOS(location, pos.coords);
         },
         () => sendSOS(location),
         { timeout: 5000 }
@@ -60,16 +94,29 @@ export default function SOSButton() {
     }
   };
 
-  const sendSOS = async (location) => {
+  const sendSOS = async (location, coords) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(
+      // Send SOS and get the incidentId from the backend
+      const res = await axios.post(
         `${API_URL}/api/incidents/sos`,
-        { location, description: 'SOS Emergency!', contacts: selected },
+        {
+          location,
+          description: 'SOS Emergency!',
+          contacts: selected,
+          latitude: coords?.latitude,
+          longitude: coords?.longitude
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setFeedback('SOS sent! Your selected contacts have been notified.');
       setOpen(true);
+
+      // Start real-time location tracking
+      if (res.data.incidentId) {
+        incidentIdRef.current = res.data.incidentId;
+        startLocationTracking(res.data.incidentId, token);
+      }
     } catch (err) {
       setFeedback('Failed to send SOS. Try again.');
       setOpen(true);
