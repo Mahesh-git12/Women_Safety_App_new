@@ -14,9 +14,10 @@ export default function Profile() {
     const fetchProfile = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await axios.get('http://localhost:5000/api/users/profile', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/users/profile`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         setProfile({ name: res.data.name, email: res.data.email });
       } catch (err) {
         setMessage('Failed to load profile');
@@ -34,7 +35,7 @@ export default function Profile() {
     const token = localStorage.getItem('token');
     try {
       const res = await axios.put(
-        'http://localhost:5000/api/users/profile',
+        `${process.env.REACT_APP_API_URL}/api/users/profile`,
         profile,
         { headers: { Authorization: `Bearer ${token}` } }
       );
