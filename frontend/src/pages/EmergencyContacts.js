@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Card, CardContent, Typography, TextField, Button, Box, Avatar, Alert,
+  Card, CardContent, Typography, TextField, Button, Box, Avatar, Alert, List, ListItem, IconButton, ListItemText
 } from '@mui/material';
 import ContactsIcon from '@mui/icons-material/Contacts';
+import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function EmergencyContacts() {
-  const [contacts, setContacts] = useState('');
+  const [contacts, setContacts] = useState([]);
+  const [newContact, setNewContact] = useState('');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -15,10 +19,10 @@ export default function EmergencyContacts() {
       if (!token) return;
       try {
         const res = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/users/emergency-contacts`,
+          `${API_URL}/api/users/emergency-contacts`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setContacts(res.data.emergencyContacts.join(', '));
+        setContacts(res.data.emergencyContacts || []);
       } catch (err) {
         setMessage('Failed to fetch contacts.');
       }
@@ -26,15 +30,25 @@ export default function EmergencyContacts() {
     fetchContacts();
   }, []);
 
+  const handleAdd = () => {
+    if (newContact && !contacts.includes(newContact)) {
+      setContacts([...contacts, newContact]);
+      setNewContact('');
+    }
+  };
+
+  const handleRemove = (email) => {
+    setContacts(contacts.filter(c => c !== email));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
     const token = localStorage.getItem('token');
     try {
-      const contactsArray = contacts.split(',').map((c) => c.trim()).filter(Boolean);
       const res = await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/users/emergency-contacts`,
-        { emergencyContacts: contactsArray },
+        `${API_URL}/api/users/emergency-contacts`,
+        { emergencyContacts: contacts },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage(res.data.message || 'Contacts updated!');
@@ -65,13 +79,39 @@ export default function EmergencyContacts() {
               Emergency Contacts
             </Typography>
             <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-              <TextField label="Contacts (comma separated)" value={contacts} onChange={e => setContacts(e.target.value)} fullWidth margin="normal" required />
+              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                <TextField
+                  label="Add Email"
+                  value={newContact}
+                  onChange={e => setNewContact(e.target.value)}
+                  fullWidth
+                  size="small"
+                  type="email"
+                />
+                <Button onClick={handleAdd} variant="contained" color="info" sx={{ borderRadius: 20 }}>
+                  Add
+                </Button>
+              </Box>
+              <List>
+                {contacts.map((email, idx) => (
+                  <ListItem
+                    key={email}
+                    secondaryAction={
+                      <IconButton edge="end" color="error" onClick={() => handleRemove(email)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    }
+                  >
+                    <ListItemText primary={email} />
+                  </ListItem>
+                ))}
+              </List>
               <Button type="submit" variant="contained" color="info" fullWidth sx={{
-                mt: 3, py: 1.5, fontWeight: 'bold', fontSize: '1.1rem',
+                mt: 2, py: 1.5, fontWeight: 'bold', fontSize: '1.1rem',
                 background: 'linear-gradient(90deg, #8ec5fc 0%, #e0c3fc 100%)',
                 boxShadow: '0 2px 16px #8ec5fc33', borderRadius: 20,
               }}>
-                Update
+                Save Contacts
               </Button>
             </Box>
             {message && (

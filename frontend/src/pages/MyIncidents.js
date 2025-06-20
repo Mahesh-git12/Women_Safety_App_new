@@ -8,6 +8,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import IncidentsMap from './IncidentsMap';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function MyIncidents() {
   const [incidents, setIncidents] = useState([]);
   const [message, setMessage] = useState('');
@@ -22,7 +24,7 @@ export default function MyIncidents() {
         return;
       }
       try {
-        const res = await axios.get('https://vigilant-74go.onrender.com/api/incidents/my-incidents', {
+        const res = await axios.get(`${API_URL}/api/incidents/my-incidents`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setIncidents(res.data.incidents || []);
@@ -51,7 +53,7 @@ export default function MyIncidents() {
     if (!window.confirm('Are you sure you want to delete this incident?')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/incidents/${id}`, {
+      await axios.delete(`${API_URL}/api/incidents/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIncidents((prev) => prev.filter((incident) => incident._id !== id));

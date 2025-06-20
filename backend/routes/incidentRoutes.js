@@ -29,14 +29,16 @@ router.post('/report', authMiddleware, async (req, res) => {
 // SOS endpoint
 router.post('/sos', authMiddleware, async (req, res) => {
   try {
-    const { location, description, latitude, longitude } = req.body;
+    const { location, description, latitude, longitude, contacts } = req.body;
     const user = await User.findById(req.user.userId);
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
-    }
-    if (!user.emergencyContacts || user.emergencyContacts.length === 0) {
-      return res.status(400).json({ message: 'No emergency contacts defined for this user.' });
+    // Use selected contacts if provided, else all
+    const recipients = Array.isArray(contacts) && contacts.length > 0
+      ? contacts
+      : user.emergencyContacts || [];
+
+    if (!recipients || recipients.length === 0) {
+      return res.status(400).json({ message: 'No emergency contacts selected.' });
     }
 
     const incident = new Incident({
@@ -52,11 +54,11 @@ router.post('/sos', authMiddleware, async (req, res) => {
 
     const trackUrl = `https://vigilant-frontend.onrender.com/track/${incident._id}`;
 
-    const emailPromises = user.emergencyContacts.map(email =>
+    const emailPromises = recipients.map(email =>
       sendEmail({
         to: email,
-        subject: 'SOS Alert from Vigilant',
-        text: `Your contact ${user.name} has triggered an SOS!
+        subject: `SOS Alert from ${user.name} (${user.email})`,
+        text: `Your contact ${user.name} (${user.email}) has triggered an SOS!
 Location: ${location}
 Description: ${description || 'SOS Emergency!'}
 Time: ${new Date().toLocaleString()}
@@ -67,11 +69,12 @@ Track live location: ${trackUrl}
     );
     await Promise.all(emailPromises);
 
-    res.json({ message: 'SOS received and contacts notified!' });
+    res.json({ message: 'SOS received and selected contacts notified!' });
   } catch (err) {
     console.error('SOS email error:', err);
     res.status(500).json({ message: 'Failed to process SOS.' });
   }
 });
+
 
 module.exports = router;

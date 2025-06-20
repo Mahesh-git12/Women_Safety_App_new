@@ -1,13 +1,49 @@
-import React, { useState } from 'react';
-import { Fab, Tooltip, Snackbar, Alert } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Fab, Tooltip, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button, Checkbox, FormControlLabel, FormGroup } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function SOSButton() {
   const [open, setOpen] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [contacts, setContacts] = useState([]);
+  const [selected, setSelected] = useState([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  const handleSOS = async () => {
+  useEffect(() => {
+    // Fetch emergency contacts when the button is rendered
+    const fetchContacts = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const res = await axios.get(
+          `${API_URL}/api/users/emergency-contacts`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setContacts(res.data.emergencyContacts || []);
+        setSelected(res.data.emergencyContacts || []);
+      } catch (err) {
+        setFeedback('Failed to load contacts for SOS.');
+        setOpen(true);
+      }
+    };
+    fetchContacts();
+  }, []);
+
+  const handleSOSClick = () => {
+    setDialogOpen(true);
+  };
+
+  const handleCheckbox = (email) => {
+    setSelected((prev) =>
+      prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email]
+    );
+  };
+
+  const handleSendSOS = async () => {
+    setDialogOpen(false);
     setFeedback('');
     let location = 'Unknown';
     if (navigator.geolocation) {
@@ -28,11 +64,11 @@ export default function SOSButton() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/incidents/sos`,
-        { location, description: 'SOS Emergency!' },
+        `${API_URL}/api/incidents/sos`,
+        { location, description: 'SOS Emergency!', contacts: selected },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setFeedback('SOS sent! Your contacts have been notified.');
+      setFeedback('SOS sent! Your selected contacts have been notified.');
       setOpen(true);
     } catch (err) {
       setFeedback('Failed to send SOS. Try again.');
@@ -45,7 +81,7 @@ export default function SOSButton() {
       <Tooltip title="Send SOS" placement="left">
         <Fab
           color="error"
-          onClick={handleSOS}
+          onClick={handleSOSClick}
           sx={{
             position: 'fixed',
             bottom: 32,
@@ -59,6 +95,29 @@ export default function SOSButton() {
           <WarningAmberIcon sx={{ fontSize: 40 }} />
         </Fab>
       </Tooltip>
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+        <DialogTitle>Select Contacts for SOS</DialogTitle>
+        <DialogContent>
+          <FormGroup>
+            {contacts.map(email => (
+              <FormControlLabel
+                key={email}
+                control={
+                  <Checkbox
+                    checked={selected.includes(email)}
+                    onChange={() => handleCheckbox(email)}
+                  />
+                }
+                label={email}
+              />
+            ))}
+          </FormGroup>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleSendSOS} variant="contained" color="error">Send SOS</Button>
+        </DialogActions>
+      </Dialog>
       <Snackbar open={open} autoHideDuration={4000} onClose={() => setOpen(false)}>
         <Alert severity={feedback.startsWith('SOS') ? 'success' : 'error'} sx={{ width: '100%' }}>
           {feedback}
