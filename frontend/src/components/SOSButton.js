@@ -29,7 +29,7 @@ export default function SOSButton() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        'http://localhost:5000/api/incidents/sos',
+        `${process.env.REACT_APP_API_URL}/api/incidents/sos`,
         { location, description: 'SOS Emergency!' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
