@@ -1,3 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const authMiddleware = require('../middleware/authMiddleware');
+const sendEmail = require('../utils/sendEmail');
+const User = require('../models/User');
+const Incident = require('../models/Incident');
+
 // SOS endpoint
 router.post('/sos', authMiddleware, async (req, res) => {
   try {
@@ -45,3 +52,5 @@ Track live location: ${trackUrl}
     res.status(500).json({ message: 'Failed to process SOS.' });
   }
 });
+
+module.exports = router;
