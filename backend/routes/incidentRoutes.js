@@ -26,7 +26,7 @@ router.post('/report', authMiddleware, async (req, res) => {
   }
 });
 
-// SOS endpoint
+// SOS endpoint (with selectable contacts)
 router.post('/sos', authMiddleware, async (req, res) => {
   try {
     const { location, description, latitude, longitude, contacts } = req.body;
@@ -76,5 +76,31 @@ Track live location: ${trackUrl}
   }
 });
 
+// GET user's incidents
+router.get('/my-incidents', authMiddleware, async (req, res) => {
+  try {
+    const incidents = await Incident.find({ user: req.user.userId }).sort({ date: -1 });
+    res.json({ incidents });
+  } catch (err) {
+    console.error('Fetch incidents error:', err);
+    res.status(500).json({ message: 'Failed to fetch incidents.' });
+  }
+});
+
+// Delete an incident
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const incident = await Incident.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user.userId,
+    });
+    if (!incident) {
+      return res.status(404).json({ message: 'Incident not found or unauthorized.' });
+    }
+    res.json({ message: 'Incident deleted.' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete incident.' });
+  }
+});
 
 module.exports = router;
