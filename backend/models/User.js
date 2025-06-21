@@ -4,7 +4,10 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  emergencyContacts: [{ type: String, required: true }],
+  emergencyContacts: [{
+  email: String,
+  phone: String
+}],
   createdAt: { type: Date, default: Date.now }
 });
 

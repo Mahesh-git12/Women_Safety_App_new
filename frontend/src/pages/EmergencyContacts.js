@@ -10,7 +10,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 export default function EmergencyContacts() {
   const [contacts, setContacts] = useState([]);
-  const [newContact, setNewContact] = useState('');
+  const [newContact, setNewContact] = useState({ email: '', phone: '' });
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -31,14 +31,24 @@ export default function EmergencyContacts() {
   }, []);
 
   const handleAdd = () => {
-    if (newContact && !contacts.includes(newContact)) {
+    if (
+      newContact.email &&
+      newContact.phone &&
+      !contacts.some(
+        c => c.email === newContact.email && c.phone === newContact.phone
+      )
+    ) {
       setContacts([...contacts, newContact]);
-      setNewContact('');
+      setNewContact({ email: '', phone: '' });
     }
   };
 
-  const handleRemove = (email) => {
-    setContacts(contacts.filter(c => c !== email));
+  const handleRemove = (idx) => {
+    setContacts(contacts.filter((_, i) => i !== idx));
+  };
+
+  const handleChange = (e) => {
+    setNewContact({ ...newContact, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -65,7 +75,7 @@ export default function EmergencyContacts() {
       justifyContent: 'center',
       background: 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
     }}>
-      <Card sx={{ maxWidth: 420, width: '100%', p: 2 }}>
+      <Card sx={{ maxWidth: 440, width: '100%', p: 2 }}>
         <CardContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <Avatar sx={{
@@ -81,28 +91,43 @@ export default function EmergencyContacts() {
             <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
               <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
                 <TextField
-                  label="Add Email"
-                  value={newContact}
-                  onChange={e => setNewContact(e.target.value)}
+                  label="Email"
+                  name="email"
+                  value={newContact.email}
+                  onChange={handleChange}
                   fullWidth
                   size="small"
                   type="email"
+                  required
+                />
+                <TextField
+                  label="Phone"
+                  name="phone"
+                  value={newContact.phone}
+                  onChange={handleChange}
+                  fullWidth
+                  size="small"
+                  type="tel"
+                  required
                 />
                 <Button onClick={handleAdd} variant="contained" color="info" sx={{ borderRadius: 20 }}>
                   Add
                 </Button>
               </Box>
               <List>
-                {contacts.map((email, idx) => (
+                {contacts.map((contact, idx) => (
                   <ListItem
-                    key={email}
+                    key={idx}
                     secondaryAction={
-                      <IconButton edge="end" color="error" onClick={() => handleRemove(email)}>
+                      <IconButton edge="end" color="error" onClick={() => handleRemove(idx)}>
                         <DeleteIcon />
                       </IconButton>
                     }
                   >
-                    <ListItemText primary={email} />
+                    <ListItemText
+                      primary={contact.email}
+                      secondary={contact.phone}
+                    />
                   </ListItem>
                 ))}
               </List>

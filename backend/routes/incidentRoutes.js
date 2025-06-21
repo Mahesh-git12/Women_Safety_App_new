@@ -4,6 +4,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const sendEmail = require('../utils/sendEmail');
 const User = require('../models/User');
 const Incident = require('../models/Incident');
+const sendSMS = require('../utils/sendSMS');
 
 // Report Incident
 router.post('/report', authMiddleware, async (req, res) => {
@@ -68,6 +69,15 @@ Track live location: ${trackUrl}
 `
       })
     );
+    const smsBody = `SOS from ${user.name} (${user.email}):\nLocation: ${location}\nTrack: ${trackUrl}`;
+    const smsPromises = recipients
+      .filter(c => c.phone)
+      .map(c =>
+        sendSMS({
+          to: c.phone,
+          body: smsBody
+        })
+      );
     await Promise.all(emailPromises);
 
     res.json({ message: 'SOS received and selected contacts notified!', incidentId: incident._id });
