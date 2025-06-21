@@ -4,7 +4,6 @@ const authMiddleware = require('../middleware/authMiddleware');
 const sendEmail = require('../utils/sendEmail');
 const User = require('../models/User');
 const Incident = require('../models/Incident');
-const sendSMS = require('../utils/sendSMS');
 
 // Report Incident
 router.post('/report', authMiddleware, async (req, res) => {
@@ -56,19 +55,24 @@ router.post('/sos', authMiddleware, async (req, res) => {
 
     const trackUrl = `https://vigilant-frontend.onrender.com/track/${incident._id}`;
 
-    const emailPromises = recipients.map(email =>
-      sendEmail({
-        to: email,
-        subject: `SOS Alert from ${user.name} (${user.email})`,
-        text: `Your contact ${user.name} (${user.email}) has triggered an SOS!
+    // Send emails
+    const emailPromises = recipients
+      .filter(c => c.email)
+      .map(c =>
+        sendEmail({
+          to: c.email,
+          subject: `SOS Alert from ${user.name} (${user.email})`,
+          text: `Your contact ${user.name} (${user.email}) has triggered an SOS!
 Location: ${location}
 Description: ${description || 'SOS Emergency!'}
 Time: ${new Date().toLocaleString()}
 
 Track live location: ${trackUrl}
 `
-      })
-    );
+        })
+      );
+
+    // Send SMS
     const smsBody = `SOS from ${user.name} (${user.email}):\nLocation: ${location}\nTrack: ${trackUrl}`;
     const smsPromises = recipients
       .filter(c => c.phone)
@@ -78,11 +82,12 @@ Track live location: ${trackUrl}
           body: smsBody
         })
       );
-    await Promise.all(emailPromises);
+
+    await Promise.all([...emailPromises, ...smsPromises]);
 
     res.json({ message: 'SOS received and selected contacts notified!', incidentId: incident._id });
   } catch (err) {
-    console.error('SOS email error:', err);
+    console.error('SOS alert error:', err);
     res.status(500).json({ message: 'Failed to process SOS.' });
   }
 });
