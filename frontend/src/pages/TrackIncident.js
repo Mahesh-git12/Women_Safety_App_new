@@ -1,40 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function TrackIncident() {
   const { incidentId } = useParams();
-  const [incident, setIncident] = useState(null);
+  const [location, setLocation] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchIncident = async () => {
-      const res = await fetch(`http://localhost:5000/api/incidents/track/${incidentId}`);
-      const data = await res.json();
-      setIncident(data);
+    const fetchLocation = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/incidents/track-location/${incidentId}`);
+        setLocation(res.data.latestLocation);
+        setError('');
+      } catch (err) {
+        setError('No location available yet. Waiting for updates...');
+      }
     };
-    fetchIncident();
-
-    // Optional: Poll every 10 seconds for live updates
-    const interval = setInterval(fetchIncident, 10000);
+    fetchLocation();
+    const interval = setInterval(fetchLocation, 5000);
     return () => clearInterval(interval);
   }, [incidentId]);
 
-  if (!incident || !incident.latitude || !incident.longitude) return <div>Loading map...</div>;
+  if (error) return <div style={{ textAlign: 'center', marginTop: 40 }}>{error}</div>;
+  if (!location) return <div style={{ textAlign: 'center', marginTop: 40 }}>Waiting for location...</div>;
 
   return (
-    <div>
+    <div style={{ textAlign: 'center', marginTop: 40 }}>
       <h2>Live Location</h2>
-      <MapContainer center={[incident.latitude, incident.longitude]} zoom={15} style={{ height: 400, width: '100%' }}>
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <Marker position={[incident.latitude, incident.longitude]}>
-          <Popup>
-            {incident.type === 'sos' ? 'SOS' : 'Incident'}<br />
-            {incident.location}<br />
-            {incident.description}
-          </Popup>
-        </Marker>
-      </MapContainer>
-      <p>Last updated: {new Date(incident.date).toLocaleString()}</p>
+      <p><strong>Latitude:</strong> {location.latitude}</p>
+      <p><strong>Longitude:</strong> {location.longitude}</p>
+      <p><strong>Last updated:</strong> {new Date(location.updatedAt).toLocaleString()}</p>
     </div>
   );
 }

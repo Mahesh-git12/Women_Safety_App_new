@@ -13,7 +13,6 @@ const incidentSchema = new mongoose.Schema({
     longitude: Number,
     updatedAt: Date
   }
-  // ...any other fields
 });
 
 module.exports = mongoose.model('Incident', incidentSchema);

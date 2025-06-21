@@ -12,10 +12,8 @@ export default function SOSButton() {
   const [selected, setSelected] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const watchIdRef = useRef(null);
-  const incidentIdRef = useRef(null);
 
   useEffect(() => {
-    // Fetch emergency contacts when the button is rendered
     const fetchContacts = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
@@ -32,14 +30,11 @@ export default function SOSButton() {
       }
     };
     fetchContacts();
-    // Cleanup on unmount
     return () => stopLocationTracking();
     // eslint-disable-next-line
   }, []);
 
-  const handleSOSClick = () => {
-    setDialogOpen(true);
-  };
+  const handleSOSClick = () => setDialogOpen(true);
 
   const handleCheckbox = (email) => {
     setSelected((prev) =>
@@ -47,7 +42,6 @@ export default function SOSButton() {
     );
   };
 
-  // Start tracking location after SOS is sent
   const startLocationTracking = (incidentId, token) => {
     if ('geolocation' in navigator) {
       watchIdRef.current = navigator.geolocation.watchPosition(
@@ -58,17 +52,14 @@ export default function SOSButton() {
               { latitude: pos.coords.latitude, longitude: pos.coords.longitude },
               { headers: { Authorization: `Bearer ${token}` } }
             );
-          } catch (err) {
-            // Optionally handle location update error
-          }
+          } catch (err) {}
         },
-        (err) => { /* Optionally handle geolocation error */ },
+        (err) => {},
         { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
       );
     }
   };
 
-  // Stop tracking (optional, e.g. on SOS resolution)
   const stopLocationTracking = () => {
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
@@ -97,7 +88,6 @@ export default function SOSButton() {
   const sendSOS = async (location, coords) => {
     try {
       const token = localStorage.getItem('token');
-      // Send SOS and get the incidentId from the backend
       const res = await axios.post(
         `${API_URL}/api/incidents/sos`,
         {
@@ -114,7 +104,6 @@ export default function SOSButton() {
 
       // Start real-time location tracking
       if (res.data.incidentId) {
-        incidentIdRef.current = res.data.incidentId;
         startLocationTracking(res.data.incidentId, token);
       }
     } catch (err) {
