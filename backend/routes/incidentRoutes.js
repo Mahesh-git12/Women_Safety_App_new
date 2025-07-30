@@ -1,3 +1,111 @@
+// const express = require('express');
+// const router = express.Router();
+// const authMiddleware = require('../middleware/authMiddleware');
+// const sendEmail = require('../utils/sendEmail');
+// const User = require('../models/User');
+// const Incident = require('../models/Incident');
+
+// // Report Incident and send notifications
+// router.post('/report', authMiddleware, async (req, res) => {
+//   try {
+//     const { location, description, latitude, longitude, contacts } = req.body;
+//     const user = await User.findById(req.user.userId);
+
+//     const incident = new Incident({
+//       user: req.user.userId,
+//       location,
+//       description,
+//       latitude,
+//       longitude,
+//       date: new Date(),
+//       type: 'incident'
+//     });
+//     await incident.save();
+
+//     // Send emails to selected contacts (if any)
+//     if (Array.isArray(contacts) && contacts.length > 0) {
+//       const emailPromises = contacts
+//         .filter(c => c.email)
+//         .map(async c => {
+//           try {
+//             await sendEmail({
+//               to: c.email,
+//               subject: `Incident Reported by ${user.name} (${user.email})`,
+//               text: `Your contact ${user.name} (${user.email}) has reported an incident.Location: ${location || 'N/A'}Description: ${description || 'No details.'}Time: ${new Date().toLocaleString()}`
+//             });
+//             console.log('Incident email sent to', c.email);
+//           } catch (err) {
+//             console.error('Failed to send incident email to', c.email, err);
+//           }
+//         });
+//       await Promise.all(emailPromises);
+//     }
+
+//     res.json({ message: 'Incident reported and contacts notified!' });
+//   } catch (err) {
+//     console.error('Incident report error:', err);
+//     res.status(500).json({ message: 'Failed to report incident.' });
+//   }
+// });
+
+// // SOS endpoint (sends emails + tracking)
+// router.post('/sos', authMiddleware, async (req, res) => {
+//   try {
+//     const { location, description, latitude, longitude, contacts } = req.body;
+//     const user = await User.findById(req.user.userId);
+
+//     // Use selected contacts if provided, else all user's saved contacts
+//     const recipients = Array.isArray(contacts) && contacts.length > 0
+//       ? contacts
+//       : user.emergencyContacts || [];
+
+//     const emailRecipients = recipients.filter(c => c.email);
+
+//     if (!emailRecipients.length) {
+//       return res.status(400).json({ message: 'No emergency contacts with valid email selected.' });
+//     }
+
+//     const incident = new Incident({
+//       user: req.user.userId,
+//       location,
+//       description: description || 'SOS Emergency!',
+//       latitude,
+//       longitude,
+//       date: new Date(),
+//       type: 'sos',
+//       latestLocation: latitude && longitude ? { latitude, longitude, updatedAt: new Date() } : undefined
+//     });
+//     await incident.save();
+
+//     const trackUrl = `${process.env.FRONTEND_URL}/track/${incident._id}`;
+
+//     const emailPromises = emailRecipients.map(async c => {
+//       try {
+//         await sendEmail({
+//           to: c.email,
+//           subject: `SOS Alert from ${user.name} (${user.email})`,
+//           text: `Your contact ${user.name} (${user.email}) has triggered an SOS!
+// Location: ${location || 'N/A'}
+// Description: ${description || 'SOS Emergency!'}
+// Time: ${new Date().toLocaleString()}
+
+// Track live location: ${trackUrl}
+// `
+//         });
+//         console.log('SOS email sent to', c.email);
+//       } catch (err) {
+//         console.error('Failed to send SOS email to', c.email, err);
+//       }
+//     });
+//     await Promise.all(emailPromises);
+
+//     res.json({ message: 'SOS received and selected contacts notified!', incidentId: incident._id });
+//   } catch (err) {
+//     console.error('SOS alert error:', err);
+//     res.status(500).json({ message: 'Failed to process SOS.' });
+//   }
+// });
+
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
@@ -5,10 +113,12 @@ const sendEmail = require('../utils/sendEmail');
 const User = require('../models/User');
 const Incident = require('../models/Incident');
 
-// Report Incident
+// Report Incident and send notifications
 router.post('/report', authMiddleware, async (req, res) => {
   try {
-    const { location, description, latitude, longitude } = req.body;
+    const { location, description, latitude, longitude, contacts } = req.body;
+    const user = await User.findById(req.user.userId);
+
     const incident = new Incident({
       user: req.user.userId,
       location,
@@ -19,26 +129,47 @@ router.post('/report', authMiddleware, async (req, res) => {
       type: 'incident'
     });
     await incident.save();
-    res.json({ message: 'Incident reported!' });
+
+    if (Array.isArray(contacts) && contacts.length > 0) {
+      const emailPromises = contacts
+        .filter(c => c.email)
+        .map(async c => {
+          try {
+            await sendEmail({
+              to: c.email,
+              subject: `Incident Reported by ${user.name} (${user.email})`,
+              text: `Your contact ${user.name} (${user.email}) has reported an incident.\n\nLocation: ${location || 'N/A'}\nDescription: ${description || 'No details.'}\nTime: ${new Date().toLocaleString()}`
+            });
+            console.log('Incident email sent to', c.email);
+          } catch (err) {
+            console.error('Failed to send incident email to', c.email, err);
+          }
+        });
+      await Promise.all(emailPromises);
+    }
+
+    res.json({ message: 'Incident reported and contacts notified!' });
   } catch (err) {
     console.error('Incident report error:', err);
     res.status(500).json({ message: 'Failed to report incident.' });
   }
 });
 
-// SOS endpoint (returns incidentId for tracking)
+// SOS endpoint (sends emails + tracking)
 router.post('/sos', authMiddleware, async (req, res) => {
   try {
     const { location, description, latitude, longitude, contacts } = req.body;
     const user = await User.findById(req.user.userId);
 
-    // Use selected contacts if provided, else all
+    // Use selected contacts if provided, else all user's saved contacts
     const recipients = Array.isArray(contacts) && contacts.length > 0
       ? contacts
       : user.emergencyContacts || [];
 
-    if (!recipients || recipients.length === 0) {
-      return res.status(400).json({ message: 'No emergency contacts selected.' });
+    const emailRecipients = recipients.filter(c => c.email);
+
+    if (!emailRecipients.length) {
+      return res.status(400).json({ message: 'No emergency contacts with valid email selected.' });
     }
 
     const incident = new Incident({
@@ -53,37 +184,21 @@ router.post('/sos', authMiddleware, async (req, res) => {
     });
     await incident.save();
 
-    const trackUrl = `https://vigilant-frontend.onrender.com/track/${incident._id}`;
+    const trackUrl = `${process.env.FRONTEND_URL}/track/${incident._id}`;
 
-    // Send emails
-    const emailPromises = recipients
-      .filter(c => c.email)
-      .map(c =>
-        sendEmail({
+    const emailPromises = emailRecipients.map(async c => {
+      try {
+        await sendEmail({
           to: c.email,
           subject: `SOS Alert from ${user.name} (${user.email})`,
-          text: `Your contact ${user.name} (${user.email}) has triggered an SOS!
-Location: ${location}
-Description: ${description || 'SOS Emergency!'}
-Time: ${new Date().toLocaleString()}
-
-Track live location: ${trackUrl}
-`
-        })
-      );
-
-    // Send SMS
-    const smsBody = `SOS from ${user.name} (${user.email}):\nLocation: ${location}\nTrack: ${trackUrl}`;
-    const smsPromises = recipients
-      .filter(c => c.phone)
-      .map(c =>
-        sendSMS({
-          to: c.phone,
-          body: smsBody
-        })
-      );
-
-    await Promise.all([...emailPromises, ...smsPromises]);
+          text: `Your contact ${user.name} (${user.email}) has triggered an SOS!\n\nLocation: ${location || 'N/A'}\nDescription: ${description || 'SOS Emergency!'}\nTime: ${new Date().toLocaleString()}\n\nTrack live location: ${trackUrl}`
+        });
+        console.log('SOS email sent to', c.email);
+      } catch (err) {
+        console.error('Failed to send SOS email to', c.email, err);
+      }
+    });
+    await Promise.all(emailPromises);
 
     res.json({ message: 'SOS received and selected contacts notified!', incidentId: incident._id });
   } catch (err) {
@@ -92,7 +207,8 @@ Track live location: ${trackUrl}
   }
 });
 
-// Update latest location for an incident (called by the user device)
+
+// Update latest location for an incident (track live)
 router.post('/update-location/:id', authMiddleware, async (req, res) => {
   try {
     const { latitude, longitude } = req.body;
@@ -108,7 +224,7 @@ router.post('/update-location/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// Public endpoint to get latest location for tracking
+// Public endpoint to get latest live location for tracking
 router.get('/track-location/:id', async (req, res) => {
   try {
     const incident = await Incident.findById(req.params.id);
@@ -121,7 +237,7 @@ router.get('/track-location/:id', async (req, res) => {
   }
 });
 
-// GET user's incidents
+// Get all incidents for the logged-in user
 router.get('/my-incidents', authMiddleware, async (req, res) => {
   try {
     const incidents = await Incident.find({ user: req.user.userId }).sort({ date: -1 });

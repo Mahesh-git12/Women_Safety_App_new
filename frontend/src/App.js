@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import ReportIncident from './pages/ReportIncident';
@@ -7,21 +7,31 @@ import MyIncidents from './pages/MyIncidents';
 import EmergencyContacts from './pages/EmergencyContacts';
 import Profile from './pages/Profile';
 import Landing from './pages/Landing';
+import HomePage from './pages/HomePage';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 import SOSButton from './components/SOSButton';
-import TrackIncident from './pages/TrackIncident'; // <-- Import the tracking page
+import TrackIncident from './pages/TrackIncident';
+
 
 import { AppBar, Toolbar, Button, Box, Container, Avatar } from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
 
+
 function App() {
   const isLoggedIn = !!localStorage.getItem('token');
+
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     window.location.href = '/login';
   };
+
+
+  // Helper: for public routes, redirect if already logged in
+  const RedirectIfLoggedIn = ({ children }) =>
+    isLoggedIn ? <Navigate to="/home" /> : children;
+
 
   return (
     <Router>
@@ -51,7 +61,7 @@ function App() {
             <Box sx={{ flexGrow: 1 }}>
               <Button
                 component={Link}
-                to="/"
+                to={isLoggedIn ? "/home" : "/"}
                 sx={{
                   color: 'primary.main',
                   fontWeight: 700,
@@ -76,6 +86,9 @@ function App() {
               </>
             ) : (
               <>
+                <Button component={Link} to="/home" color="primary" sx={{ mx: 1 }}>
+                  Home
+                </Button>
                 <Button component={Link} to="/report" color="primary" sx={{ mx: 1 }}>
                   Report
                 </Button>
@@ -111,12 +124,38 @@ function App() {
           </Toolbar>
         </Container>
       </AppBar>
-      {/* Conditionally render the SOS button for logged-in users */}
       {isLoggedIn && <SOSButton />}
       <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            isLoggedIn ? <Navigate to="/home" /> : <Landing />
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <RedirectIfLoggedIn>
+              <Register />
+            </RedirectIfLoggedIn>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <RedirectIfLoggedIn>
+              <Login />
+            </RedirectIfLoggedIn>
+          }
+        />
+        <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/report"
           element={
@@ -156,5 +195,6 @@ function App() {
     </Router>
   );
 }
+
 
 export default App;

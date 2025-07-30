@@ -9,9 +9,18 @@ const incidentRoutes = require('./routes/incidentRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS setup (must be before routes)
+// CORS setup for local and deployed frontend
+const allowedOrigins = [
+  'http://localhost:3000',
+  process.env.FRONTEND_URL // e.g., 'https://your-frontend.onrender.com'
+];
 app.use(cors({
-  origin: 'https://vigilant-frontend.onrender.com',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 
