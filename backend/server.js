@@ -106,7 +106,7 @@ const userRoutes = require('./routes/userRoutes');
 const incidentRoutes = require('./routes/incidentRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 // CORS setup for local and deployed frontend
 const allowedOrigins = [
