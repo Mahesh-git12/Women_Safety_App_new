@@ -4,11 +4,25 @@ const jwt = require('jsonwebtoken');
 
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, password, emergencyContacts } = req.body;
-    if (await User.findOne({ email }))
+    const { name, email, password, emergencyContacts, location } = req.body;
+    if (!name || !email || !password || !location ||
+        !location.coordinates || !Array.isArray(location.coordinates) ||
+        location.coordinates.length !== 2 ||
+        typeof location.coordinates[0] !== 'number' ||
+        typeof location.coordinates[1] !== 'number') {
+      return res.status(400).json({ message: 'All fields and valid location are required.' });
+    }
+    if (await User.findOne({ email })) {
       return res.status(409).json({ message: 'User already exists with this email.' });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, password: hashedPassword, emergencyContacts });
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      emergencyContacts,
+      location
+    });
     await user.save();
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
@@ -23,7 +37,7 @@ exports.loginUser = async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password)))
       return res.status(401).json({ message: 'Invalid credentials' });
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user._id, email: user.email }, // key: userId (not _id)
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );

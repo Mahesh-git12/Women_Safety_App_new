@@ -9,6 +9,7 @@ export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', emergencyContacts: '' });
   const [message, setMessage] = useState('');
   const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   React.useEffect(() => { setShow(true); }, []);
 
@@ -17,26 +18,47 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
-    try {
-      const contactsArray = form.emergencyContacts
-        .split(',')
-        .map((c) => ({ email: c.trim() }))
-        .filter((c) => c.email);
+    setLoading(true);
 
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/users/register`,
-        {
-          name: form.name,
-          email: form.email,
-          password: form.password,
-          emergencyContacts: contactsArray,
-        }
-      );
-      setMessage(res.data.message || 'Registered successfully!');
-      setForm({ name: '', email: '', password: '', emergencyContacts: '' });
-    } catch (err) {
-      setMessage(err.response?.data?.message || 'Registration failed.');
+    if (!navigator.geolocation) {
+      setMessage('Geolocation permission is required for registration.');
+      setLoading(false);
+      return;
     }
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const contactsArray = form.emergencyContacts
+          .split(',')
+          .map((c) => ({ email: c.trim() }))
+          .filter((c) => c.email);
+
+        const location = {
+          type: 'Point',
+          coordinates: [pos.coords.longitude, pos.coords.latitude]
+        };
+
+        const res = await axios.post(
+          `${process.env.REACT_APP_API_URL}/api/users/register`,
+          {
+            name: form.name,
+            email: form.email,
+            password: form.password,
+            emergencyContacts: contactsArray,
+            location
+          }
+        );
+        setMessage(res.data.message || 'Registered successfully!');
+        setForm({ name: '', email: '', password: '', emergencyContacts: '' });
+      } catch (err) {
+        setMessage(err.response?.data?.message || 'Registration failed.');
+      } finally {
+        setLoading(false);
+      }
+    }, (geoErr) => {
+      setMessage('Location permission denied. Registration requires your location.');
+      setLoading(false);
+    });
   };
 
   return (
@@ -64,18 +86,21 @@ export default function Register() {
                 <TextField label="Email" name="email" type="email" value={form.email} onChange={handleChange} fullWidth margin="normal" required />
                 <TextField label="Password" name="password" type="password" value={form.password} onChange={handleChange} fullWidth margin="normal" required />
                 <TextField label="Emergency Contacts (comma separated emails)" name="emergencyContacts" value={form.emergencyContacts} onChange={handleChange} fullWidth margin="normal" required />
-                <Button type="submit" variant="contained" color="primary" fullWidth
+                <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading}
                   sx={{
                     mt: 3, py: 1.5, fontWeight: 'bold', fontSize: '1.1rem',
                     background: 'linear-gradient(90deg, #fc5c7d 0%, #6a82fb 100%)',
                     borderRadius: 20,
                   }}>
-                  Register
+                  {loading ? "Registering..." : "Register"}
                 </Button>
               </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
+                Location permission is required to enable nearest helper features.
+              </Typography>
               {message && (
                 <Fade in>
-                  <Alert severity={message.includes('success') ? "success" : "error"} sx={{ width: '100%' }}>
+                  <Alert severity={message.toLowerCase().includes('success') ? "success" : "error"} sx={{ width: '100%' }}>
                     {message}
                   </Alert>
                 </Fade>
