@@ -28,7 +28,7 @@ export default function Notifications() {
           longitude: pos.coords.longitude,
         });
       });
-    }
+    } 
   }, []);
 
   useEffect(() => {
