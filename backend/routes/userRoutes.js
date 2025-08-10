@@ -50,7 +50,7 @@ router.get('/nearest', authMiddleware, async (req, res) => {
             type: 'Point',
             coordinates: [parsedLongitude, parsedLatitude]
           },
-          $maxDistance: 5000 // 5km radius
+          $maxDistance: 130000 // 5km radius
         }
       }
     })
