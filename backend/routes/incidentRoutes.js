@@ -184,7 +184,8 @@ router.post('/sos', authMiddleware, async (req, res) => {
     });
     await incident.save();
 
-    const trackUrl = `${process.env.FRONTEND_URL}/track/${incident._id}`;
+    const trackUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+
 
     const emailPromises = emailRecipients.map(async c => {
       try {
