@@ -17,7 +17,8 @@ async function sendNearestUserEmailNotification(toEmail, helperName, senderName,
     html: `
       <p>Hi <b>${helperName}</b>,</p>
       <p><b>${senderName}</b> (<a href="mailto:${senderEmail}">${senderEmail}</a>) has selected you as the nearest helper via the Women Safety App.</p>
-      <p>Requester location: <a href="${locationURL}">${latitude}, ${longitude}</a></p>
+      <p>Requester location: <a href="https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}" target="_blank"> Open Directions in Google Maps </a></p>
+
       <p>Please check your app and respond quickly!</p>
       <hr>
       <small>This is an automated alert from Women Safety App. Replying to this email will contact the requester directly.</small>
