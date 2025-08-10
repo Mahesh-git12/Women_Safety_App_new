@@ -137,7 +137,7 @@ export default function Notifications() {
                           <Button
                             variant="text"
                             size="small"
-                            href={`https://www.google.com/maps?q=${n.location.latitude},${n.location.longitude}`}
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${n.location.latitude},${n.location.longitude}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             startIcon={<LocationOnIcon />}
