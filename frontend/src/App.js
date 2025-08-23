@@ -19,6 +19,7 @@ import FindHelperButton from "./components/FindHelperButton";
 import { AppBar, Toolbar, Button, Box, Container, Avatar } from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
 
+import { Analytics } from "@vercel/analytics/react";
 function App() {
   const isLoggedIn = !!localStorage.getItem('token');
 
@@ -198,6 +199,7 @@ function App() {
         <Route path="/track/:incidentId" element={<TrackIncident />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <Analytics/>
     </Router>
   );
 }
