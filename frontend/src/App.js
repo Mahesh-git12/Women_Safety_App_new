@@ -226,7 +226,6 @@ import VoiceSOSConsentModal from './components/VoiceSOSConsentModal';
 import VoiceSOSFab from './components/VoiceSOSFab';
 import { AppBar, Toolbar, Button, Box, Container, Avatar, Snackbar, Alert } from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
-import { Analytics } from "@vercel/analytics/react";
 import SafetyResources from './pages/SafetyResources';
 import axios from "axios";
 
