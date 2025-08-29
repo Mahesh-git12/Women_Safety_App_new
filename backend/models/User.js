@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true, required: true },
   password: String,
+  avatarUrl: { type: String, default: '' },  // new field for avatar URL
   location: {
     type: { type: String, enum: ['Point'], default: 'Point', required: true },
     coordinates: { type: [Number], required: true } // [longitude, latitude]
@@ -31,7 +32,6 @@ userSchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('User', userSchema);
 
-
 // const mongoose = require('mongoose');
 
 // const userSchema = new mongoose.Schema({
@@ -40,7 +40,7 @@ module.exports = mongoose.model('User', userSchema);
 //   password: String,
 //   location: {
 //     type: { type: String, enum: ['Point'], default: 'Point', required: true },
-//     coordinates: { type: [Number], required: true }, // [longitude, latitude]
+//     coordinates: { type: [Number], required: true } // [longitude, latitude]
 //   },
 //   emergencyContacts: [{ email: String, phone: String }],
 //   notifications: [
@@ -59,6 +59,8 @@ module.exports = mongoose.model('User', userSchema);
 //   ]
 // });
 
-// userSchema.index({ location: '2dsphere' }); // <-- Crucial for geo ($nearSphere) queries!
+// // 2dsphere index for geospatial queries
+// userSchema.index({ location: '2dsphere' });
 
 // module.exports = mongoose.model('User', userSchema);
+

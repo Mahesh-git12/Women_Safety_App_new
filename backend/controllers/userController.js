@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
+const path = require('path');
 exports.registerUser = async (req, res) => {
   try {
     const { name, email, password, emergencyContacts, location } = req.body;
@@ -91,6 +91,49 @@ exports.getProfile = async (req, res) => {
     res.json(user);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+
+exports.uploadAvatar = async (req, res) => {
+  try {
+    console.log('File info:', req.file);
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { avatarUrl },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'Profile photo uploaded successfully', avatarUrl: user.avatarUrl });
+  } catch (err) {
+    console.error('Avatar upload error:', err);
+    res.status(500).json({ message: 'Failed to upload avatar', error: err.message });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    if (!name || !email) return res.status(400).json({ message: 'Name and email required' });
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { name, email },
+      { new: true }
+    ).select('-password');
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ message: 'Profile updated!', user });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    res.status(500).json({ message: 'Failed to update profile' });
   }
 };
 

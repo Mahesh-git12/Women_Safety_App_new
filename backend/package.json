@@ -21,6 +21,7 @@
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
     "mongoose": "^8.16.0",
+    "multer": "^2.0.2",
     "nodemailer": "^7.0.3",
     "react-leaflet": "^5.0.0",
     "twilio": "^5.7.1"

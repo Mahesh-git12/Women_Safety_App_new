@@ -148,8 +148,8 @@ export default function FindHelperButton() {
           onClick={handleFindHelperClick}
           sx={{
             position: "fixed",
-            bottom: 112,
-            right: 32,
+            bottom: 125,
+            right: 43,
             zIndex: 1200
           }}
         >

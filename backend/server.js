@@ -1,5 +1,3 @@
-
-
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -7,7 +5,8 @@ const cors = require('cors');
 
 const userRoutes = require('./routes/userRoutes');
 const incidentRoutes = require('./routes/incidentRoutes');
-
+const resourceRoutes = require('./routes/resourceRoutes');
+const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
@@ -30,6 +29,11 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 app.use('/api/incidents', incidentRoutes);
 
+// Serve avatar uploads statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+//Resources 
+app.use('/api/resources', resourceRoutes);
 // Sample Notifications
 app.get('/notifications', (req, res) => {
   const notifications = [
